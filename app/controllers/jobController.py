@@ -15,7 +15,9 @@ def job_add(ip:str, seconds:str):
         id=ip, 
         func= lambda : get_picture(ip),
         trigger='interval', 
-        seconds=seconds )
+        seconds=seconds,
+        max_instances=5,
+    )
     
     jobs = load_jobs()
     jobs[ip] = {
@@ -32,6 +34,11 @@ def job_remove(ip:str):
     from app import APPscheduler
     if(APPscheduler.get_job(ip)!=None):
         APPscheduler.remove_job(ip)
+        
+        jobs = load_jobs()
+        jobs.pop(ip)
+        save_jobs(jobs)    
+    
     
     return "Job removed"
 

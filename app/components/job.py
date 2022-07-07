@@ -1,5 +1,7 @@
 from flask_apscheduler import APScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 import pickle 
 
 from app.components.picture import get_picture
@@ -7,23 +9,29 @@ from app.components.picture import get_picture
 path = 'app/storage/jobs/jobs'
 
 def load_scheduler()->APScheduler:
+    jobstores = {
+        'default': SQLAlchemyJobStore(url='sqlite:///jobs.sqlite')
+    }
+    executors = {
+        'default': ThreadPoolExecutor(20),
+        'processpool': ProcessPoolExecutor(5)
+    }
+    job_defaults = {
+        'coalesce': False,
+        'max_instances': 5
+    }
     scheduler = APScheduler(
-        scheduler=BackgroundScheduler(
-            {
-                'apscheduler.executors.default': {
-                    'class': 'apscheduler.executors.pool:ThreadPoolExecutor',
-                    'max_workers': '20'
-                },
-                'apscheduler.executors.processpool': {
-                    'type': 'processpool',
-                    'max_workers': '5'
-                },
-                'apscheduler.job_defaults.max_instances': 3,
-                'apscheduler.job_defaults.coalesce': 'false',
-            }, 
-            daemon=True)
+        # scheduler=BackgroundScheduler(
+        #     jobstores=jobstores,
+        #     executors=executors, 
+        #     job_defaults=job_defaults,
+        #     daemon=True
+        # ),
+        scheduler=BackgroundScheduler({
+            'apscheduler.job_defaults.max_instances': '3',
+        }),
     )
-    init_jobs(scheduler)
+    
     return scheduler
 
 def load_jobs()->dict:
@@ -47,17 +55,28 @@ def save_jobs(jobs:dict)->dict:
 def init_jobs(scheduler:APScheduler):
     jobs = load_jobs()
     print(jobs)
-    
+
     for ip in jobs.keys():
-        print(f"IP {ip} ->>> Interval: {int(jobs[ip]['interval'])}")
+        seconds = int(jobs[ip]['interval'])
+        print(f"IP {ip} ->>> Interval: {seconds}")
+        
+        if(scheduler.get_job(ip)!=None):
+            scheduler.remove_job(ip)
+        
         scheduler.add_job(
             id=ip, 
             func= lambda : get_picture(ip),
             trigger='interval', 
-            seconds=int(jobs[ip]['interval']),
-            replace_existing=False,
+            seconds=seconds,
+            max_instances=5,
         )
-
+        
+      
+def resume_jobs(scheduler:APScheduler):
+    jobs = load_jobs()
+    for job in jobs.keys():
+        print(f"Resume {job}")
+        scheduler.resume_job(job)
 '''
 jobs = {
     '192.168.1.11' : {

@@ -6,6 +6,8 @@ from flask import jsonify
 import os
 
 def get_picture(ip:str):
+    r = requests.get(f"http://{ip}/control?var=framesize&val=10")
+    r = requests.get(f"http://{ip}/control?var=quality&val=4")
     r = requests.get(f"http://{ip}/capture")
     now = str(datetime.datetime.now())
     path = f"{app.config['UPLOAD_FOLDER']}/{ip}"

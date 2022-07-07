@@ -3,7 +3,7 @@ import multiprocess
 import time
 from app.components.job import load_scheduler, init_jobs, resume_jobs, load_jobs
 from app.components.picture import get_config, get_picture
-from flask_script import Manager, Server
+from flask_script import Manager
 
 from config import *
 
@@ -14,11 +14,3 @@ app.run(
     use_reloader=False,
     threaded=True,
 )
- 
-    
-
-
-
-
-
-
