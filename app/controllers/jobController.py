@@ -34,9 +34,8 @@ def job_remove(ip:str):
     from app import APPscheduler
     if(APPscheduler.get_job(ip)!=None):
         APPscheduler.remove_job(ip)
-        
         jobs = load_jobs()
-        jobs.pop(ip)
+        jobs.pop(ip, None)
         save_jobs(jobs)    
     
     
